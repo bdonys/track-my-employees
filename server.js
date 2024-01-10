@@ -1,9 +1,15 @@
 const inquirer = require('inquirer');
-const connection = require('./config/connection');
+const db = require('./db/db');
 
-function init() {
-    inquirer
-        .prompt({
+
+process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+    process.exit(1); // Exit the process with an error code
+});
+
+async function init() {
+    try {
+        const answer = await inquirer.prompt({
             type: 'list',
             name: 'action',
             message: 'What would you like to do?',
@@ -18,41 +24,95 @@ function init() {
                 'Exit'
             ]
         })
-        .then(async (answer) => {
-            switch (answer.action) {
-                case 'View all departments':
-                    await viewDepartments();
-                    break;
-                case 'View all roles':
-                    await viewRoles();
-                    break;
-                case 'View all employees':
-                    await viewEmployees();
-                    break;
-                case 'Add a department':
-                    await addDepartment();
-                    break;
-                case 'Add a role':
-                    await addRole();
-                    break;
-                case 'Add an employee':
-                    await addEmployee();
-                    break;
-                case 'Update an employee role':
-                    await updateEmployeeRole();
-                    break;
-                case 'Exit':
-                    connection.end();
-                    break;
-                default:
-                    console.log(`Invalid action: ${answer.action}`);
-                    break;
-            }
-        });
-}
-
-
-
-
+        switch (answer.action) {
+            case 'View all departments':
+                const departments = await db.viewDepartments();
+                console.table(departments);
+                break;
+            case 'View all roles':
+                const roles = await db.viewRoles();
+                console.table(roles);
+                break;
+            case 'View all employees':
+                const employees = await db.viewEmployees();
+                console.table(employees);
+                break;
+            case 'Add a department':
+                const addDepartmentName = await inquirer.prompt({
+                    type: 'input',
+                    name: 'name',
+                    message: 'What is the name of the department?'
+                });
+                await db.addDepartment(addDepartmentName);
+                console.log('Department has been added.')
+                break;
+            case 'Add a role':
+                const addRole = await inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'title',
+                        message: 'What is the title of the role?'
+                    },
+                    {
+                        type: 'input',
+                        name: 'salary',
+                        message: 'What is the salary of the role?'
+                    },
+                ]);
+                await db.addRole(addRole);
+                console.log('Role has been added.')
+                break;
+            case 'Add an employee':
+                const addEmployee = await inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'first_name',
+                        message: 'What is the first name of the employee?'
+                    },
+                    {
+                        type: 'input',
+                        name: 'last_name',
+                        message: 'What is the last name of the employee?'
+                    },
+                    {
+                        type: 'input',
+                        name: 'role_id',
+                        message: 'What is the role id of the employee?'
+                    },
+                    {
+                        type: 'input',
+                        name: 'manager_id',
+                        message: 'What is the manager id of the employee?'
+                    },
+                ]);
+                await db.addEmployee(addEmployee);
+                console.log('Employee has been added.')
+                break;
+            case 'Update an employee role':
+                const employeeId = await inquirer.prompt({
+                    type: 'input',
+                    name: 'employee_id',
+                    message: 'What is the id of the employee?'
+                });
+                const roleId = await inquirer.prompt({
+                    type: 'input',
+                    name: 'role_id',
+                    message: 'What is the id of the role?'
+                });
+                await db.updateEmployeeRole(employeeId, roleId);
+                console.log('Employee role has been updated.')
+                break;
+            case 'Exit':
+                connection.end();
+                break;
+            default:
+                console.log(`Invalid action: ${answer.action}`);
+                break;
+        }
+    }
+    catch (err) {
+        console.log(err)
+    }
+};
 
 init();

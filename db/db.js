@@ -56,10 +56,11 @@ async function addEmployee(employee) {
 
 async function updateEmployeeRole(employeeId, roleId) {
     try {
-        const [rows] = await connection.query('UPDATE employees SET role_id = ? WHERE id = ?', [roleId, employeeId]);
-        return rows;
+        const [result] = await connection.query('UPDATE employees SET role_id = ? WHERE id = ?', [roleId, employeeId]);
+        return result.affectedRows > 0;
     } catch (err) {
         console.log(err);
+        return false;
     }
 }
 
